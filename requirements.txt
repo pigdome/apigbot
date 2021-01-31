@@ -7,10 +7,12 @@ future==0.18.2
 idna==2.10
 instaloader==4.6.1
 line-bot-sdk==1.18.0
+mysqlclient==2.0.3
 Pillow==8.1.0
 pycodestyle==2.6.0
 pytz==2020.5
 requests==2.25.1
 sqlparse==0.4.1
 toml==0.10.2
+tzlocal==2.1
 urllib3==1.26.3
