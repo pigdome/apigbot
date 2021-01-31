@@ -38,7 +38,8 @@ def handle_message(event):
         fn(event)
     except Exception as e:
         print(e)
-        ch.help(event)
+        if event.message.text.find("#APIGcloset") == -1:
+            ch.help(event)
 
 
 @handler.add(MessageEvent, message=StickerMessage)
@@ -59,8 +60,6 @@ def handle_postback(event):
         fn(event, params)
     except Exception as e:
         print(e)
-        print(action)
-        print("WTF")
         ch.help(event)
 
 

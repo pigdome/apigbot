@@ -5,6 +5,7 @@ import json
 import os
 import re
 import subprocess
+import pytz
 from datetime import datetime, timedelta
 from PIL import Image
 from PIL import ImageFont
@@ -32,16 +33,13 @@ class Command(BaseCommand):
             base36 = alphabet[i] + base36
 
         return sign + base36
-    
+
     def get_date(file):
         date = datetime.strptime(
             file[0:19], "%Y-%m-%d_%H-%M-%S")
         return date
-        date = date + timedelta(hours=7)
-        return date
-    
+
     def get_date_frame(date):
-        print(date, int(date.hour)+7)
         hour = int(date.hour) + 7
         if hour >= 0 and hour < 12:
             return "morning"
@@ -62,48 +60,48 @@ class Command(BaseCommand):
 
         for file in os.listdir(DOWNLOAD_DIR):
             if file.endswith(".txt"):
-                print(file)
                 date = Command.get_date(file)
+                date_time = date.strftime("%Y-%m-%dT%H:%M:%S+00:00")
                 date_frame = Command.get_date_frame(date)
-                code = Command.generate_code(file)
-                fh = open(DOWNLOAD_DIR / file, 'r')
-                description = ""
+                code=Command.generate_code(file)
+                fh=open(DOWNLOAD_DIR / file, 'r')
+                description=""
                 for line in fh.readlines():
-                    text = None
+                    text=None
                     if re.search(r"^([0-9]+)\.\-", line):
-                        match = re.search(r"^([0-9]+)", line)
-                        price = match.group(0)
-                        text = "Price {}.-\n".format(price)
+                        match=re.search(r"^([0-9]+)", line)
+                        price=match.group(0)
+                        text="Price {}.-\n".format(price)
                     else:
-                        text = re.sub(r"#[^\s]+", "", line)
+                        text=re.sub(r"#[^\s]+", "", line)
 
                     description += text
-                description += settings.POST_FOOTER
+                description += settings.CLOSET_FOOTER + " #" +code
                 ClosetPost.objects.update_or_create(
-                    code=code, defaults={'description': description, 'date': date, 'date_frame': date_frame})
+                    code = code, defaults = {'description': description, 'date': date_time, 'date_frame': date_frame})
 
             elif file.endswith(".jpg"):
-                code = Command.generate_code(file)
-                number = re.sub(r"^.*_|\.jpg$", "", file)
-                number = re.sub(r"UTC|_", "", number)
+                code=Command.generate_code(file)
+                number=re.sub(r"^.*_|\.jpg$", "", file)
+                number=re.sub(r"UTC|_", "", number)
                 if number == "":
-                    number = "1"
-                name = "{}-{}".format(code, number)
-                img = Image.open(DOWNLOAD_DIR / file)
-                draw = ImageDraw.Draw(img)
-                font = ImageFont.truetype(
+                    number="1"
+                name="{}-{}".format(code, number)
+                img=Image.open(DOWNLOAD_DIR / file)
+                draw=ImageDraw.Draw(img)
+                font=ImageFont.truetype(
                     settings.WATERMARK_FONT_FILE, settings.WATERMARK_FONT_SIZE)
                 draw.text(settings.WATERMARK_POINT, code,
-                          settings.WATERMARK_FONT_COLOR, font=font)
+                          settings.WATERMARK_FONT_COLOR, font = font)
                 img.save(WORK_DIR / file)
 
                 ClosetImages.objects.update_or_create(
-                    code=code, name=name, thumnail=False, defaults={'src': settings.STATIC_URL + file})
-                
+                    code = code, name = name, thumbnail = False, defaults = {'src': settings.STATIC_URL + file})
+
                 # thumbnail
-                file_thumbnail = re.sub(r"jpg$", "png", file)
+                file_thumbnail=re.sub(r"jpg$", "png", file)
                 img.thumbnail((200, 302))
                 img.save(WORK_DIR / file_thumbnail)
-                
+
                 ClosetImages.objects.update_or_create(
-                    code=code, name=name, thumnail=True, defaults={'src': settings.STATIC_URL + file_thumbnail})
+                    code = code, name = name, thumbnail = True, defaults = {'src': settings.STATIC_URL + file_thumbnail})
